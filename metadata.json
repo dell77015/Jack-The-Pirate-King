@@ -1,0 +1,13 @@
+{
+  "name": "Jack The Pirate King",
+  "symbol": "PIRJx",
+  "description": "PIRJx - Jack The Pirate King",
+  "image": "YOUR_LOGO_URL",
+  "external_url": "https://raw.githubusercontent.com/dell77015/Jack-The-Pirate-King/6c92bb98ed74e638f1aadebcff5cc6ffc4c4ab98/PIRJx.png",
+  "attributes": [
+    {
+      "trait_type": "Category",
+      "value": "Meme"
+    }
+  ]
+}

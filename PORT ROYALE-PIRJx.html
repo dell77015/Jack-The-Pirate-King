@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Jack The Pirate King — PIRJx: Black Tide</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#05080c;color:#f6df9a;font-family:Georgia,serif}
+body{overflow:hidden}.wrap{height:100%;display:flex;flex-direction:column}
+header{height:76px;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;
+background:linear-gradient(#111b25,#070b10);border-bottom:2px solid #b88932;box-shadow:0 0 30px #000}
+.brand{display:flex;gap:10px;align-items:center}.skull{font-size:38px}.brand b{font-size:22px;letter-spacing:2px}.brand small{display:block;color:#d2b66d}
+.stats{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;font-family:Arial,sans-serif;font-size:12px}
+.stat{border:1px solid #725727;border-radius:8px;padding:6px 9px;background:#0b1117}.stat strong{color:#fff;font-size:15px}
+main{position:relative;flex:1;min-height:0}.sea{position:absolute;inset:0;background:
+radial-gradient(circle at 70% 15%,#6e8294 0,#1b3547 20%,transparent 45%),
+linear-gradient(#101d29 0%,#0b2432 46%,#061923 100%)}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.panel{position:absolute;z-index:5;background:rgba(5,9,13,.93);border:1px solid #b88932;border-radius:14px;box-shadow:0 15px 60px #000;padding:18px}
+#intro{left:50%;top:50%;transform:translate(-50%,-50%);width:min(650px,92vw);text-align:center}
+h1{margin:0 0 4px;font-size:38px;color:#ffe39a;text-shadow:0 3px 10px #000}.tag{color:#c9d3d9;margin-bottom:14px}
+.story{line-height:1.45;color:#ddd}.gold{color:#f4c85b}
+button,select,input{font:inherit}button{cursor:pointer;color:#ffe7a3;background:linear-gradient(#553b18,#241809);
+border:1px solid #c79b45;border-radius:9px;padding:10px 15px;font-weight:bold}
+button:hover{filter:brightness(1.25)}.row{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+#route{left:14px;top:14px;width:260px}.routeTitle{font-size:12px;color:#b8c6ce;letter-spacing:1px}
+.track{height:9px;background:#071017;border:1px solid #624c26;border-radius:9px;overflow:hidden;margin-top:7px}.fill{height:100%;width:0;background:linear-gradient(90deg,#9a6820,#f5d16d)}
+#log{right:14px;bottom:14px;width:300px;max-height:170px;overflow:auto;font:12px/1.45 Arial;color:#bfcbd2}
+.logline{padding:3px 0;border-bottom:1px solid #18232b}.goldtxt{color:#ffd568}
+#market{left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,94vw);display:none}
+#settings{left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,94vw);display:none}
+.marketGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:12px 0}.good{border:1px solid #384953;border-radius:9px;padding:10px;background:#0a1218}
+.good b{display:block;color:#fff}.good span{font:12px Arial;color:#9fb0bb}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button{flex:1}
+label{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #23313a;font-family:Arial;font-size:13px}
+input[type=range]{width:180px}.danger{border-color:#9e4b3e}.muted{color:#9aa9b2;font:12px Arial}
+#travel{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:4;text-align:center;font:12px Arial;color:#b9c8cf}
+#controls{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:6;display:flex;gap:7px}
+#controls button{min-width:65px;padding:8px 10px}
+#toast{position:absolute;left:50%;top:17%;transform:translateX(-50%);z-index:8;font-size:20px;text-shadow:0 2px 8px #000;opacity:0;transition:.25s}
+@media(max-width:700px){header{height:62px}.brand b{font-size:16px}.skull{font-size:28px}.stats{gap:4px}.stat{padding:4px 6px}#route{width:220px}.panel{padding:13px}.marketGrid{grid-template-columns:1fr 1fr}#log{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <div class="brand"><div class="skull">☠️</div><div><b>JACK THE PIRATE KING</b><small>PIRJx • BLACK TIDE</small></div></div>
+ <div class="stats">
+  <div class="stat">GOLD <strong id="gold">500</strong></div>
+  <div class="stat">CARGO <strong id="cargo">20</strong></div>
+  <div class="stat">HULL <strong id="hull">100</strong>%</div>
+  <div class="stat">CREW <strong id="crew">25</strong></div>
+  <div class="stat">DAY <strong id="day">1</strong></div>
+ </div>
+</header>
+<main>
+<div class="sea"></div><canvas id="game"></canvas>
+<div id="route" class="panel">
+ <div class="routeTitle">VOYAGE TO PORT ROYALE</div>
+ <div><b id="port">PORT ROYALE</b> <span class="muted"> • <span id="distance">0</span>/100 leagues</span></div>
+ <div class="track"><div id="routeFill" class="fill"></div></div>
+ <div class="muted" style="margin-top:6px">Wind: <span id="wind">Calm</span> • Risk: <span id="risk">Low</span></div>
+</div>
+<div id="toast"></div>
+
+<div id="intro" class="panel">
+ <h1>☠ JACK THE PIRATE KING</h1>
+ <div class="tag">PIRJx — BLACK TIDE</div>
+ <div class="story">A pirate trading adventure inspired by the classic <b>1980s text-trading game formula</b> — rebuilt as a pirate world. Buy cargo cheaply, sail between dangerous ports, sell high, evade hunters, upgrade your ship, recruit crew and build your pirate fortune.</div>
+ <p class="gold">You have 500 gold, an empty 20-space cargo hold and one battered ship.</p>
+ <div class="row"><button id="start">SET SAIL</button><button id="how">HOW TO PLAY</button></div>
+</div>
+
+<div id="market" class="panel">
+ <h2 style="margin:0">⚓ <span id="marketPort">PORT</span></h2>
+ <div class="muted">Choose your trade. Prices change from port to port and each day.</div>
+ <div class="marketGrid" id="goods"></div>
+ <div class="actions">
+  <button id="sail">⛵ SAIL ON</button>
+  <button id="repair">🔧 REPAIR HULL</button>
+  <button id="crewBuy">🏴‍☠️ RECRUIT CREW</button>
+  <button id="upgrade">⚔ UPGRADE SHIP</button>
+ </div>
+</div>
+
+<div id="settings" class="panel">
+ <h2 style="margin-top:0">⚙ CAPTAIN'S SETTINGS</h2>
+ <label>Game speed <input id="speed" type="range" min="60" max="140" value="100"></label>
+ <label>Sound <input id="volume" type="range" min="0" max="100" value="45"></label>
+ <label>Show hints <input id="hints" type="checkbox" checked></label>
+ <div class="actions"><button id="resume">RESUME VOYAGE</button><button id="reset" class="danger">NEW VOYAGE</button></div>
+</div>
+
+<div id="log" class="panel"></div>
+<div id="travel">⬅ A / ← &nbsp; • &nbsp; SAIL &nbsp; • &nbsp; D / → ➡ &nbsp; • &nbsp; SPACE = BROADSIDE</div>
+<div id="controls"><button id="left">◀</button><button id="fire">💥 FIRE</button><button id="right">▶</button><button id="gear">⚙</button></div>
+</main>
+</div>
+
+<script>
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+let W=0,H=0,last=0,keys={},running=false,paused=false;
+const G={gold:500,cargo:0,hull:100,crew:25,day:1,distance:0,port:0,portName:'PORT ROYALE',
+ speed:1,volume:.45,hints:true,upgrade:1,shots:0,rumor:0,inventory:{}};
+const ports=[
+ ['PORT ROYALE','Royal Harbour'],['SKULL ISLAND','Smuggler Cove'],['BLACKWATER','Pirate Haven'],
+ ['DEAD MAN’S BAY','Treasure Port'],['STORMHAVEN','Storm Port'],['CUTTHROAT CAY','Freebooters’ Rest']
+];
+const goods=[
+ ['Rum','🍾',30,100],['Spices','🌶️',55,180],['Silk','🧵',80,250],['Guns','💣',110,330],
+ ['Gold Dust','🪙',150,500],['Black Pearls','⚫',220,700]
+];
+let prices={},stock={},stars=[],shots=[],enemy=[],particles=[],clouds=[];
+let ship={x:.5,y:.82,vx:0,fire:0};
+
+function resize(){W=c.width=innerWidth*devicePixelRatio;H=c.height=(innerHeight-76)*devicePixelRatio;c.style.width='100%';c.style.height='100%';ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);W=innerWidth;H=innerHeight-76}
+addEventListener('resize',resize);resize();
+for(let i=0;i<80;i++)stars.push({x:Math.random(),y:Math.random(),a:Math.random()*.7+.2});
+for(let i=0;i<12;i++)clouds.push({x:Math.random(),y:.1+Math.random()*.25,s:.5+Math.random()*.9});
+
+function log(s){let el=document.getElementById('log');el.innerHTML='<div class="logline">'+s+'</div>'+el.innerHTML}
+function toast(s){let e=document.getElementById('toast');e.textContent=s;e.style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.opacity=0,1800)}
+function money(n){return Math.max(0,Math.floor(n))}
+function makePrices(){
+ goods.forEach((g,i)=>{let base=g[2]+Math.random()*(g[3]-g[2]);let portMod=(G.port*17+i*13)%80-40;let event=G.rumor===i?-0.35:0;prices[g[0]]=money(base*(1+portMod/100+event));stock[g[0]]=2+Math.floor(Math.random()*9)});
+ document.getElementById('marketPort').textContent=ports[G.port][0];
+ let html='';goods.forEach(g=>html+=`<div class="good"><b>${g[1]} ${g[0]}</b><span>Price: <strong>${prices[g[0]]}g</strong> • Port stock: ${stock[g[0]]} • You own: <strong>${qty(g[0])}</strong></span><div class="actions"><button onclick="buy('${g[0]}')">BUY 1</button><button onclick="sell('${g[0]}')">SELL 1</button></div></div>`);
+ document.getElementById('goods').innerHTML=html;
+}
+function totalCargo(){return Object.values(G.inventory).reduce((sum,n)=>sum+n,0)}
+function cargoMax(){return 20+G.upgrade*10}
+function qty(name){return G.inventory[name]||0}
+function buy(name){const price=prices[name];if(stock[name]<=0)return toast('No more '+name+' in this port!');if(totalCargo()>=cargoMax())return toast('Cargo hold is full!');if(G.gold<price)return toast('Not enough gold!');const before=G.gold;G.gold-=price;G.inventory[name]=(G.inventory[name]||0)+1;stock[name]--;log('Bought 1 '+name+' for '+price+' gold. Gold: '+before+' → '+G.gold+'.');hud();makePrices()}
+function sell(name){const held=qty(name);if(held<=0)return toast('You do not have any '+name+'!');const price=prices[name];const before=G.gold;G.gold+=price;G.inventory[name]=held-1;if(G.inventory[name]<=0)delete G.inventory[name];log('Sold 1 '+name+' for '+price+' gold. Gold: '+before+' → '+G.gold+'.');hud();makePrices()}
+function hud(){document.getElementById('gold').textContent=Math.floor(G.gold);document.getElementById('cargo').textContent=totalCargo()+' / '+cargoMax();document.getElementById('hull').textContent=Math.floor(G.hull);document.getElementById('crew').textContent=Math.floor(G.crew);document.getElementById('day').textContent=Math.floor(G.day);document.getElementById('distance').textContent=Math.floor(G.distance);document.getElementById('routeFill').style.width=Math.min(100,G.distance)+'%';document.getElementById('wind').textContent=windName();document.getElementById('risk').textContent=G.distance>75?'High':G.distance>45?'Medium':'Low'}
+function windName(){return ['Calm','Fair','Strong','Gale'][Math.floor((G.day+G.port+G.distance/25)%4)]}
+function showMarket(){paused=true;makePrices();document.getElementById('market').style.display='block'}
+function closeMarket(){document.getElementById('market').style.display='none';paused=false}
+function newVoyage(){
+ Object.assign(G,{gold:500,cargo:0,hull:100,crew:25,day:1,distance:0,port:0,upgrade:1,rumor:Math.floor(Math.random()*goods.length)});
+ shots=[];enemy=[];particles=[];ship.x=.5;running=true;paused=false;
+ document.getElementById('intro').style.display='none';closeMarket();makePrices();log('The Black Tide begins. Find profitable cargo and survive the voyage.');hud();last=performance.now();requestAnimationFrame(loop)
+}
+document.getElementById('start').onclick=()=>newVoyage();
+document.getElementById('sail').onclick=()=>{closeMarket();toast('The wind fills your sails!')};
+document.getElementById('repair').onclick=()=>{let cost=(100-G.hull)*3;if(G.hull>=100)return toast('Hull is already seaworthy!');if(G.gold<cost)return toast('You need '+cost+' gold.');G.gold-=cost;G.hull=100;log('Hull repaired for '+cost+' gold.');hud()}
+document.getElementById('crewBuy').onclick=()=>{if(G.gold<50)return toast('Recruitment costs 50 gold.');G.gold-=50;G.crew+=5;log('Five pirates joined your crew.');hud()}
+document.getElementById('upgrade').onclick=()=>{let cost=350*G.upgrade;if(G.gold<cost)return toast('Ship upgrade costs '+cost+' gold.');G.gold-=cost;G.upgrade++;G.hull=Math.min(100,G.hull+15);log('Ship upgraded. Cargo capacity is now '+cargoMax()+'.');hud()}
+document.getElementById('how').onclick=()=>alert('TRADE: Buy cargo in one port and sell it in another.\\n\\nSAIL: Reach 100 leagues to arrive at the next port.\\n\\nDANGER: Hunters may attack at sea. Use SPACE for a broadside.\\n\\nGOAL: Build your pirate fortune, upgrade your ship and survive as many days as possible.');
+document.getElementById('gear').onclick=()=>{paused=true;document.getElementById('settings').style.display='block'};
+document.getElementById('resume').onclick=()=>{document.getElementById('settings').style.display='none';paused=false};
+document.getElementById('reset').onclick=()=>{document.getElementById('settings').style.display='none';newVoyage()};
+document.getElementById('speed').oninput=e=>G.speed=e.target.value/100;
+document.getElementById('volume').oninput=e=>G.volume=e.target.value/100;
+document.getElementById('hints').onchange=e=>G.hints=e.target.checked;
+
+function fire(){
+ if(!running||paused||ship.fire>0)return;
+ ship.fire=.38/G.upgrade;shots.push({x:ship.x,y:.82,v:1.15});
+ beep(170,.07,'square');G.shots++; 
+}
+function beep(f,d,type='sine'){if(!G.volume)return;try{let a=new AudioContext(),o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;g.gain.value=.035*G.volume;o.connect(g);g.connect(a.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,a.currentTime+d);o.stop(a.currentTime+d)}catch(e){}}
+function spawnEnemy(){if(Math.random()>Math.min(.035+G.day*.002,.075))return;enemy.push({x:Math.random()*.8+.1,y:.18,v:.05+Math.random()*.045,hp:G.upgrade>2?2:1,t:Math.random()*9})}
+function damage(){G.hull-=Math.max(5,Math.floor(11-G.crew/15));beep(75,.18,'sawtooth');toast('⚠ HULL HIT!');for(let i=0;i<15;i++)particles.push({x:ship.x,y:.82,vx:(Math.random()-.5)*.3,vy:-Math.random()*.25,life:1,c:'orange'});if(G.hull<=0){running=false;alert('☠ YOUR SHIP HAS SUNK!\\nFinal gold: '+G.gold+'\\nDay: '+G.day);document.getElementById('intro').style.display='block'}}
+function arrive(){
+ G.port=(G.port+1)%ports.length;G.day++;G.distance=0;G.rumor=Math.floor(Math.random()*goods.length);
+ toast('⚓ ARRIVED: '+ports[G.port][0]);log('Arrived at '+ports[G.port][1]+'. Prices have changed.');makePrices();showMarket();hud()
+}
+function update(dt){
+ if(!running||paused)return;
+ ship.fire-=dt;ship.x+=(keys.ArrowLeft||keys.a?-1:keys.ArrowRight||keys.d?1:0)*.48*G.speed*dt;ship.x=Math.max(.08,Math.min(.92,ship.x));
+ if(keys[' ']||keys.Enter)fire();
+ G.distance+=dt*10*G.speed*(.65+Math.random()*.25);if(G.distance>=100){G.distance=100;arrive()}
+ spawnEnemy();
+ enemy.forEach(e=>{e.y+=e.v*G.speed*dt;if(Math.abs(e.x-ship.x)<.07&&e.y>.72){e.dead=true;damage()}});
+ shots.forEach(s=>{s.y-=s.v*dt;enemy.forEach(e=>{if(!e.dead&&Math.abs(s.x-e.x)<.055&&Math.abs(s.y-e.y)<.07){e.hp--;s.dead=true;if(e.hp<=0){e.dead=true;G.gold+=35+G.day*4;toast('☠ HUNTER SUNK + GOLD');log('<span class="goldtxt">Enemy hunter sunk. +'+(35+G.day*4)+' gold.</span>');for(let i=0;i<18;i++)particles.push({x:e.x,y:e.y,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.25,life:1,c:'gold'});beep(90,.16,'sawtooth')}}})});
+ shots=shots.filter(s=>!s.dead&&s.y>-.1);enemy=enemy.filter(e=>!e.dead&&e.y<1.1);
+ particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=.08*dt;p.life-=dt});
+ particles=particles.filter(p=>p.life>0);hud()
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ // moon and sky
+ let grd=ctx.createLinearGradient(0,0,0,H);grd.addColorStop(0,'#0a1722');grd.addColorStop(.55,'#0c3040');grd.addColorStop(1,'#04141c');ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='rgba(220,235,235,.7)';ctx.beginPath();ctx.arc(W*.78,H*.17,28,0,7);ctx.fill();
+ stars.forEach(s=>{ctx.globalAlpha=s.a;ctx.fillStyle='#d8e7e8';ctx.fillRect(s.x*W,s.y*H*.45,1.5,1.5)});ctx.globalAlpha=1;
+ // clouds
+ clouds.forEach(cl=>{ctx.fillStyle='rgba(15,25,31,.5)';ctx.beginPath();ctx.ellipse(cl.x*W,cl.y*H,90*cl.s,22*cl.s,0,0,7);ctx.ellipse(cl.x*W+50,cl.y*H-5,55*cl.s,18*cl.s,0,0,7);ctx.fill()});
+ // waves
+ for(let y=H*.45;y<H;y+=34){ctx.strokeStyle='rgba(85,160,178,.18)';ctx.lineWidth=2;ctx.beginPath();for(let x=0;x<W;x+=18)ctx.lineTo(x,y+Math.sin(x*.025+y*.02)*4);ctx.stroke()}
+ // distant islands
+ ctx.fillStyle='#061318';ctx.beginPath();ctx.moveTo(0,H*.56);ctx.lineTo(W*.13,H*.49);ctx.lineTo(W*.2,H*.55);ctx.lineTo(W*.33,H*.47);ctx.lineTo(W*.45,H*.55);ctx.lineTo(W*.61,H*.48);ctx.lineTo(W*.76,H*.56);ctx.lineTo(W,H*.5);ctx.lineTo(W,H*.68);ctx.lineTo(0,H*.68);ctx.fill();
+ // enemy ships
+ enemy.forEach(e=>drawShip(e.x*W,e.y*H,.62,'#38221a','#c2a05b',true));
+ // player
+ drawShip(ship.x*W,H*.82*1, .82,'#17191b','#d5ae55',false);
+ // cannon shots
+ shots.forEach(s=>{ctx.fillStyle='#ffe39a';ctx.shadowBlur=12;ctx.shadowColor='#fff';ctx.beginPath();ctx.arc(s.x*W,s.y*H,5,0,7);ctx.fill();ctx.shadowBlur=0});
+ particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.c==='gold'?'#ffd35e':'#f08a43';ctx.fillRect(p.x*W,p.y*H,4,4)});ctx.globalAlpha=1;
+}
+function drawShip(x,y,s,hull,sail,enemyFlag){
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ // wake
+ ctx.fillStyle='rgba(190,230,235,.25)';ctx.beginPath();ctx.ellipse(0,42,75,10,0,0,7);ctx.fill();
+ // mast
+ ctx.fillStyle='#6b4828';ctx.fillRect(-3,-88,6,115);
+ // sail
+ ctx.fillStyle=sail;ctx.beginPath();ctx.moveTo(2,-82);ctx.quadraticCurveTo(55,-63,58,-10);ctx.lineTo(3,-7);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='#151515';ctx.lineWidth=2;ctx.stroke();
+ // flag
+ ctx.fillStyle=enemyFlag?'#8d332b':'#080808';ctx.beginPath();ctx.moveTo(4,-89);ctx.lineTo(36,-79);ctx.lineTo(4,-69);ctx.closePath();ctx.fill();
+ // hull
+ ctx.fillStyle=hull;ctx.beginPath();ctx.moveTo(-62,20);ctx.quadraticCurveTo(-42,60,0,66);ctx.quadraticCurveTo(44,60,62,20);ctx.lineTo(48,8);ctx.lineTo(-48,8);ctx.closePath();ctx.fill();
+ ctx.strokeStyle='#d4b36b';ctx.lineWidth=2;ctx.stroke();
+ // deck
+ ctx.fillStyle='#8b6334';ctx.fillRect(-50,0,100,14);
+ // cannons
+ ctx.fillStyle='#111';for(let i=-1;i<=1;i++){ctx.fillRect(-48+i*42,13,18,5);ctx.beginPath();ctx.arc(-31+i*42,17,5,0,7);ctx.fill()}
+ // skull
+ ctx.fillStyle='#eee';ctx.beginPath();ctx.arc(0,-35,8,0,7);ctx.fill();ctx.fillStyle='#111';ctx.fillRect(-4,-38,3,4);ctx.fillRect(2,-38,3,4);
+ ctx.restore();
+}
+function loop(t){let dt=Math.min(.035,(t-last)/1000);last=t;update(dt);draw();if(running)requestAnimationFrame(loop)}
+['keydown','keyup'].forEach(ev=>addEventListener(ev,e=>{keys[e.key]=ev==='keydown';if(['ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault()}));
+[['left','ArrowLeft'],['right','ArrowRight']].forEach(([id,k])=>{let b=document.getElementById(id);b.onpointerdown=()=>keys[k]=true;b.onpointerup=b.onpointercancel=()=>keys[k]=false});
+document.getElementById('fire').onpointerdown=()=>fire();
+hud();
+</script>
+</body>
+</html>

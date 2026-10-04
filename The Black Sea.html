@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Jack The Pirate King — PIRJx: Battle of the Black Seas</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020509;color:#f8d879;font-family:Georgia,serif}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+#top{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:min(1200px,94vw);display:flex;justify-content:space-between;gap:8px;z-index:5;pointer-events:none}
+.box{background:linear-gradient(180deg,rgba(10,13,18,.88),rgba(35,18,6,.78));border:1px solid #d4a43c;border-radius:10px;padding:7px 11px;box-shadow:0 0 20px #000,inset 0 0 10px #8d5b1c55;text-shadow:0 2px 3px #000;font-weight:bold}
+#brand{font-size:clamp(11px,1.5vw,18px);letter-spacing:1.8px}
+#stats{font-size:clamp(10px,1.35vw,16px)}
+#bossbar{position:fixed;top:72px;left:50%;transform:translateX(-50%);width:min(650px,70vw);z-index:5;display:none}
+#bossname{text-align:center;font-weight:bold;letter-spacing:2px;text-shadow:0 2px 5px #000;margin-bottom:4px}
+#bar{height:13px;border:1px solid #d8a944;border-radius:8px;background:#180505;overflow:hidden;box-shadow:0 0 15px #000}
+#bar>i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#6c0808,#ff5428,#ffd55d);box-shadow:0 0 14px #ff3b1f}
+#center{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);z-index:7;text-align:center;pointer-events:none;width:min(900px,90vw)}
+#center h1{font-size:clamp(34px,7vw,92px);margin:0;color:#ffe08a;text-shadow:0 3px 0 #4a1d05,0 0 30px #ffad2f;letter-spacing:5px}
+#center p{font-size:clamp(13px,2vw,22px);margin:8px;color:#fff2c9;text-shadow:0 2px 5px #000}
+button{font:700 20px Georgia;color:#ffe7a1;background:linear-gradient(#75400f,#1c0a04);border:2px solid #d9ad4b;border-radius:12px;padding:13px 28px;box-shadow:0 0 30px #a96b1e88;cursor:pointer}
+#start{position:fixed;left:50%;top:63%;transform:translate(-50%,-50%);z-index:8}
+#hint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:5;color:#dfd1ad;font:12px Arial;letter-spacing:.4px;text-shadow:0 2px 4px #000;text-align:center}
+#touch{display:none;position:fixed;bottom:12px;left:0;right:0;z-index:9;justify-content:center;gap:12px}
+.t{width:78px;height:58px;padding:0;font-size:24px;background:#160c08dd}
+@media(max-width:700px){#top{top:5px}.box{padding:5px 7px}#hint{display:none}#touch{display:flex}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="top">
+ <div class="box" id="brand">☠ JACK THE PIRATE KING • PIRJx</div>
+ <div class="box" id="stats">LEVEL <span id="lv">1</span> • SCORE <span id="sc">0</span> • TREASURE <span id="tr">0</span> • ❤️ <span id="life">3</span></div>
+</div>
+<div id="bossbar"><div id="bossname">☠ ENEMY FLAGSHIP ☠</div><div id="bar"><i></i></div></div>
+<div id="center"><h1>THE BLACK SEAS</h1><p>Command the PIRJx flagship • Sink the fleet • Seize the treasure</p></div>
+<button id="start">⚓ ENTER THE BATTLE</button>
+<div id="hint">← → / A D steer • SPACE fire • P pause • Survive the storm and destroy the flagship</div>
+<div id="touch"><button class="t" id="L">◀</button><button class="t" id="F">💥</button><button class="t" id="R">▶</button></div>
+<script>
+const C=document.getElementById('game'),X=C.getContext('2d');let W,H,D=devicePixelRatio||1;
+function size(){W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,2);C.width=W*D;C.height=H*D;X.setTransform(D,0,0,D,0,0)}addEventListener('resize',size);size();
+
+const input={l:0,r:0,f:0};let audio=null;
+function sound(f,d=.1,type='sawtooth',v=.035,to=0){if(!audio)return;let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;o.frequency.exponentialRampToValueAtTime(Math.max(35,f+to),audio.currentTime+d);g.gain.setValueAtTime(v,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+d)}
+function cannon(){sound(75,.16,'sawtooth',.08,-45);setTimeout(()=>sound(42,.25,'square',.045,-10),30)}
+function boom(){sound(62,.35,'sawtooth',.09,-50);setTimeout(()=>sound(30,.45,'triangle',.05,-4),30)}
+function coin(){sound(650,.08,'square',.035,130);setTimeout(()=>sound(950,.11,'square',.025,90),75)}
+function initAudio(){if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();audio.resume()}
+
+for(const [id,k] of [['L','l'],['R','r'],['F','f']]){let b=document.getElementById(id);b.onpointerdown=e=>{e.preventDefault();input[k]=1};b.onpointerup=b.onpointercancel=b.onpointerleave=e=>{e.preventDefault();input[k]=0}}
+addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(e.code==='ArrowLeft'||e.code==='KeyA')input.l=1;if(e.code==='ArrowRight'||e.code==='KeyD')input.r=1;if(e.code==='Space')input.f=1;if(e.code==='KeyP'&&G.run)G.pause=!G.pause});
+addEventListener('keyup',e=>{if(e.code==='ArrowLeft'||e.code==='KeyA')input.l=0;if(e.code==='ArrowRight'||e.code==='KeyD')input.r=0;if(e.code==='Space')input.f=0});
+
+const G={run:false,pause:false,level:1,score:0,treasure:0,lives:3,spawn:0,boss:null,storm:0,night:0};
+const ship={x:W/2,y:0,v:480,cool:0,inv:0,rock:0};
+let shots=[],enemyShots=[],ships=[],fx=[],coins=[],fog=[],cloud=[],birds=[];
+function reset(){
+ G.level=1;G.score=0;G.treasure=0;G.lives=3;G.spawn=.5;G.boss=null;G.storm=0;G.night=0;
+ shots=[];enemyShots=[];ships=[];fx=[];coins=[];fog=[];cloud=[];birds=[];
+ ship.x=W/2;ship.inv=2;
+ for(let i=0;i<70;i++)fog.push({x:Math.random()*W,y:Math.random()*H,r:20+Math.random()*70,v:5+Math.random()*18,a:.02+Math.random()*.05});
+ for(let i=0;i<14;i++)cloud.push({x:Math.random()*W,y:30+Math.random()*H*.4,w:90+Math.random()*180,h:20+Math.random()*40,v:5+Math.random()*15});
+ for(let i=0;i<8;i++)birds.push({x:Math.random()*W,y:80+Math.random()*H*.35,v:15+Math.random()*30});
+}
+function txt(s,x,y,z,c='#f6d779',align='center'){X.font='700 '+z+'px Georgia';X.textAlign=align;X.fillStyle=c;X.shadowColor='#000';X.shadowBlur=5;X.fillText(s,x,y);X.shadowBlur=0}
+function roundRect(x,y,w,h,r){X.beginPath();X.roundRect(x,y,w,h,r);}
+
+function sea(t){
+ let grad=X.createLinearGradient(0,0,0,H);
+ grad.addColorStop(0,G.night?'#030914':'#132a3d');grad.addColorStop(.38,G.night?'#071b2d':'#176080');grad.addColorStop(1,'#020b13');X.fillStyle=grad;X.fillRect(0,0,W,H);
+ // sun/moon
+ X.save();let sx=W*.82,sy=H*.17;X.globalAlpha=.95;X.shadowColor=G.night?'#bcd8ff':'#ffd36b';X.shadowBlur=35;X.fillStyle=G.night?'#dcecff':'#ffd66f';X.beginPath();X.arc(sx,sy,Math.min(W,H)*.055,0,Math.PI*2);X.fill();X.restore();
+ // clouds
+ for(const q of cloud){q.x+=q.v*t;if(q.x>W+250)q.x=-300;X.fillStyle=G.night?'rgba(8,15,25,.7)':'rgba(30,39,47,.34)';X.beginPath();X.ellipse(q.x,q.y,q.w,q.h,0,0,Math.PI*2);X.fill()}
+ // distant coastline
+ X.fillStyle='#061016';X.beginPath();X.moveTo(0,H*.43);for(let x=0;x<=W;x+=70)X.lineTo(x,H*.43-18-Math.sin(x*.013)*22);X.lineTo(W,H);X.lineTo(0,H);X.fill();
+ // detailed waves
+ for(let band=0;band<18;band++){let y=H*.43+band*38;X.strokeStyle='rgba(130,220,235,'+(0.07+band*.005)+')';X.lineWidth=1.5;X.beginPath();for(let x=0;x<=W;x+=12)X.lineTo(x,y+Math.sin(x*.018+t*1.2+band)*4+Math.sin(x*.006+t*.5)*3);X.stroke()}
+ // storm lightning
+ if(G.storm>0){X.fillStyle='rgba(180,210,255,'+(G.storm*.12)+')';X.fillRect(0,0,W,H)}
+ // mist
+ for(const m of fog){m.x+=m.v*t;if(m.x>W+m.r)m.x=-m.r;X.fillStyle='rgba(190,225,225,'+m.a+')';X.beginPath();X.ellipse(m.x,m.y,m.r*2,m.r*.35,0,0,Math.PI*2);X.fill()}
+ // birds
+ X.strokeStyle='rgba(10,10,10,.55)';X.lineWidth=2;for(const b of birds){b.x+=b.v*t;if(b.x>W+40)b.x=-40;X.beginPath();X.arc(b.x,b.y,8,.15,1.2);X.stroke();X.beginPath();X.arc(b.x+13,b.y,8,1.95,2.95);X.stroke()}
+}
+
+function detailedShip(x,y,s,enemy=false,boss=false,rock=0){
+ X.save();X.translate(x,y);X.rotate(Math.sin(rock)*.035);X.scale(s,s);
+ // wake
+ X.globalAlpha=.45;X.strokeStyle='#d5f4ff';X.lineWidth=5;X.beginPath();X.moveTo(-62,27);X.quadraticCurveTo(-10,45,62,27);X.stroke();X.globalAlpha=1;
+ // shadow
+ X.fillStyle='rgba(0,0,0,.35)';X.beginPath();X.ellipse(0,35,65,13,0,0,Math.PI*2);X.fill();
+ // hull lower
+ let hg=X.createLinearGradient(0,-5,0,40);hg.addColorStop(0,enemy?'#4c1b13':'#4b2511');hg.addColorStop(.5,'#170b08');hg.addColorStop(1,'#050506');X.fillStyle=hg;X.strokeStyle='#c69237';X.lineWidth=2;
+ X.beginPath();X.moveTo(-62,-8);X.lineTo(-50,25);X.quadraticCurveTo(0,48,50,25);X.lineTo(62,-8);X.closePath();X.fill();X.stroke();
+ // hull ribs
+ X.strokeStyle='#8e6026';X.lineWidth=1;for(let i=-40;i<=40;i+=12){X.beginPath();X.moveTo(i,-2);X.lineTo(i*.9,29);X.stroke()}
+ // deck
+ X.fillStyle='#73451e';X.fillRect(-51,-12,102,10);X.strokeStyle='#c08a35';X.strokeRect(-51,-12,102,10);
+ // mast + rigging
+ X.strokeStyle='#8c642f';X.lineWidth=5;X.beginPath();X.moveTo(0,-8);X.lineTo(0,-100);X.stroke();
+ X.lineWidth=1;X.strokeStyle='rgba(220,190,120,.7)';X.beginPath();X.moveTo(-55,-10);X.lineTo(0,-100);X.lineTo(57,-10);X.stroke();
+ // sails
+ let sail=enemy?'#272522':'#eadbb8';X.fillStyle=sail;X.strokeStyle='#b98b3c';X.lineWidth=1.5;
+ X.beginPath();X.moveTo(5,-92);X.quadraticCurveTo(46,-76,50,-28);X.lineTo(5,-28);X.closePath();X.fill();X.stroke();
+ X.beginPath();X.moveTo(-5,-86);X.quadraticCurveTo(-35,-72,-40,-31);X.lineTo(-5,-31);X.closePath();X.fill();X.stroke();
+ // sail seams
+ X.strokeStyle='rgba(80,50,20,.5)';for(let a=-70;a<=-35;a+=12){X.beginPath();X.moveTo(5,a);X.lineTo(43,a+4);X.stroke()}
+ // flag
+ X.fillStyle='#050506';X.fillRect(0,-108,42,24);txt('☠',21,-89,16,'#d6a83e');
+ // lanterns
+ for(const q of [-48,48]){X.fillStyle='#ffcf58';X.shadowColor='#ffb51f';X.shadowBlur=14;X.beginPath();X.arc(q,-14,3.5,0,Math.PI*2);X.fill();X.shadowBlur=0}
+ // cannons
+ X.fillStyle='#090909';for(let i=-35;i<=35;i+=14){X.beginPath();X.arc(i,-2,3.5,0,Math.PI*2);X.fill()}
+ if(boss){X.strokeStyle='#e7bd4c';X.lineWidth=4;X.strokeRect(-69,-116,138,158)}
+ X.restore();
+}
+
+function sparkle(x,y,n=20,color='gold'){for(let i=0;i<n;i++){let a=Math.random()*Math.PI*2,s=40+Math.random()*300;fx.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.35+Math.random()*.8,r:1+Math.random()*5,color})}}
+function smoke(x,y,n=10){for(let i=0;i<n;i++)fx.push({x:x+(Math.random()-.5)*20,y:y+(Math.random()-.5)*10,vx:(Math.random()-.5)*40,vy:-30-Math.random()*80,life:.4+Math.random()*.7,r:5+Math.random()*12,color:'smoke'})}
+function treasure(x,y,n=1){for(let i=0;i<n;i++)coins.push({x:x+(Math.random()-.5)*55,y:y+(Math.random()-.5)*25,vy:-40-Math.random()*80,spin:Math.random()*6})}
+
+function spawn(){
+ let r=Math.random(),type=r<.15?'fast':r<.3?'armored':'raider';
+ ships.push({x:70+Math.random()*(W-140),y:-130,v:65+G.level*8+(type==='fast'?55:0),hp:type==='armored'?4:1,max:type==='armored'?4:1,type,phase:Math.random()*8,cool:.5+Math.random()*1.5});
+}
+function fire(){
+ if(ship.cool>0)return;ship.cool=.22;cannon();smoke(ship.x,ship.y-80,7);
+ shots.push({x:ship.x-23,y:ship.y-78,v:-780,life:1.8});shots.push({x:ship.x+23,y:ship.y-78,v:-780,life:1.8});
+}
+function hit(){
+ if(ship.inv>0)return;G.lives--;ship.inv=2.3;sparkle(ship.x,ship.y,40,'fire');boom();
+ if(G.lives<=0){G.run=false;showEnd('THE KINGDOM FALLS',`Final score ${G.score.toLocaleString()} • Treasure ${G.treasure}`)}
+}
+function showEnd(a,b){document.getElementById('center').style.display='block';document.querySelector('#center h1').textContent=a;document.querySelector('#center p').textContent=b;document.getElementById('start').style.display='block';document.getElementById('start').textContent='⚓ SAIL AGAIN'}
+
+function boss(){
+ G.boss={x:W/2,y:-180,hp:18+G.level*7,max:18+G.level*7,cool:1.1,phase:0};ships=[];document.getElementById('bossbar').style.display='block';document.getElementById('center').style.display='block';document.querySelector('#center h1').textContent='☠ THE DREAD FLAGSHIP ☠';document.querySelector('#center p').textContent='Aim for the hull — the Pirate King is under attack!';setTimeout(()=>document.getElementById('center').style.display='none',1600)
+}
+function levelUp(){G.level++;G.treasure+=15;treasure(W/2,H*.25,15);coin();document.getElementById('center').style.display='block';document.querySelector('#center h1').textContent='TREASURE CLAIMED';document.querySelector('#center p').textContent=`Level ${G.level} • The Black Seas grow more dangerous`;setTimeout(()=>document.getElementById('center').style.display='none',1300)}
+
+function update(dt,t){
+ if(G.pause)return;
+ G.night=(Math.sin(t*.000035+1)+1)/2>.68?1:0;
+ G.storm=Math.max(0,G.storm-dt*.12);
+ ship.y=H-105;ship.cool=Math.max(0,ship.cool-dt);ship.inv=Math.max(0,ship.inv-dt);ship.rock+=(input.r-input.l)*dt*4;
+ if(input.l)ship.x-=ship.v*dt;if(input.r)ship.x+=ship.v*dt;ship.x=Math.max(65,Math.min(W-65,ship.x));if(input.f)fire();
+ G.spawn-=dt;
+ if(!G.boss&&G.spawn<=0){spawn();G.spawn=Math.max(.38,1.15-G.level*.055)}
+ // periodic storms
+ if(Math.random()<dt*.018){G.storm=.8;sparkle(Math.random()*W,Math.random()*H*.4,12,'lightning');sound(50,.5,'sawtooth',.025,-20)}
+ if(!G.boss&&G.score>0&&G.score>=G.level*600&&ships.length===0&&G.spawn<0)boss();
+ for(const e of ships){
+   e.y+=e.v*dt;e.x+=Math.sin(t*.001+e.phase)*45*dt;e.cool-=dt;
+   if(e.cool<=0){enemyShots.push({x:e.x,y:e.y+30,v:190+G.level*8,life:4});e.cool=Math.max(.55,1.7-G.level*.04)}
+   if(e.y>H+100)e.dead=true;
+   if(Math.abs(e.x-ship.x)<58&&Math.abs(e.y-ship.y)<70){e.dead=true;hit()}
+ }
+ if(G.boss){let b=G.boss;b.phase+=dt;b.y=Math.min(H*.23,b.y+40*dt);b.x=W/2+Math.sin(b.phase*.65)*W*.32;b.cool-=dt;if(b.cool<=0){for(const dx of [-50,0,50])enemyShots.push({x:b.x+dx,y:b.y+50,v:230+G.level*9,life:4});b.cool=Math.max(.42,1.05-G.level*.035)}if(Math.abs(b.x-ship.x)<95&&Math.abs(b.y-ship.y)<90)hit();document.getElementById('bar').firstElementChild.style.width=(100*b.hp/b.max)+'%'}
+ for(const q of shots){q.y+=q.v*dt;q.life-=dt;for(const e of ships)if(!e.dead&&Math.abs(q.x-e.x)<48&&Math.abs(q.y-e.y)<65){e.hp--;q.life=0;sparkle(q.x,q.y,8,'fire');if(e.hp<=0){e.dead=true;G.score+=e.type==='armored'?150:75;G.treasure+=e.type==='armored'?4:1;treasure(e.x,e.y,e.type==='armored'?4:2);boom()}}if(G.boss&&Math.abs(q.x-G.boss.x)<85&&Math.abs(q.y-G.boss.y)<105){G.boss.hp--;q.life=0;sparkle(q.x,q.y,10,'fire');if(G.boss.hp<=0){G.score+=1500;G.treasure+=30;treasure(G.boss.x,G.boss.y,20);sparkle(G.boss.x,G.boss.y,100,'gold');boom();G.boss=null;document.getElementById('bossbar').style.display='none';levelUp()}}}
+ for(const q of enemyShots){q.y+=q.v*dt;q.life-=dt;if(Math.abs(q.x-ship.x)<45&&Math.abs(q.y-ship.y)<65){q.life=0;hit();}}
+ for(const c of coins){c.y+=c.vy*dt;c.vy+=115*dt;c.spin+=dt*8;if(Math.abs(c.x-ship.x)<45&&Math.abs(c.y-ship.y)<55){c.dead=true;G.treasure++;coin()}}
+ for(const p of fx){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;p.life-=dt;p.r*=.994}
+ shots=shots.filter(q=>q.life>0&&q.y>-100);enemyShots=enemyShots.filter(q=>q.life>0&&q.y<H+100);ships=ships.filter(q=>!q.dead);coins=coins.filter(q=>!q.dead&&q.y<H+60);fx=fx.filter(q=>q.life>0);
+}
+
+function draw(t){
+ sea(t/1000);
+ // cannonballs
+ for(const q of shots.concat(enemyShots)){X.save();X.fillStyle='#151515';X.shadowColor=q.v<0?'#ffe69a':'#ff4c26';X.shadowBlur=12;X.beginPath();X.arc(q.x,q.y,5,0,Math.PI*2);X.fill();X.restore()}
+ for(const e of ships)detailedShip(e.x,e.y,e.type==='armored'?1.18:.92,true,false,Math.sin(t*.002+e.phase));
+ if(G.boss)detailedShip(G.boss.x,G.boss.y,1.75,true,true,Math.sin(t*.001));
+ if(!(ship.inv>0&&Math.floor(ship.inv*12)%2===0))detailedShip(ship.x,ship.y,1.1,false,false,ship.rock);
+ for(const c of coins){X.save();X.translate(c.x,c.y);X.rotate(Math.sin(c.spin)*.5);let g=X.createRadialGradient(-3,-4,1,0,0,11);g.addColorStop(0,'#fff3a0');g.addColorStop(.3,'#ffd044');g.addColorStop(1,'#9d5d0d');X.fillStyle=g;X.beginPath();X.ellipse(0,0,10,7,0,0,Math.PI*2);X.fill();X.strokeStyle='#f7d96d';X.stroke();txt('P',0,4,9,'#6c3c08');X.restore()}
+ for(const p of fx){X.globalAlpha=Math.max(0,p.life);if(p.color==='smoke'){X.fillStyle='rgba(190,200,200,.5)'}else X.fillStyle=p.color==='gold'?'#ffd34f':p.color==='lightning'?'#dff6ff':'#ff7428';X.beginPath();X.arc(p.x,p.y,p.r,0,Math.PI*2);X.fill()}X.globalAlpha=1;
+ document.getElementById('lv').textContent=G.level;document.getElementById('sc').textContent=G.score.toLocaleString();document.getElementById('tr').textContent=G.treasure;document.getElementById('life').textContent=G.lives;
+}
+
+let last=performance.now();
+function loop(t){if(!G.run)return;let dt=Math.min(.032,(t-last)/1000);last=t;update(dt,t);draw(t);requestAnimationFrame(loop)}
+document.getElementById('start').onclick=()=>{initAudio();reset();G.run=true;G.pause=false;document.getElementById('start').style.display='none';document.getElementById('center').style.display='none';last=performance.now();requestAnimationFrame(loop)}
+reset();draw(0);
+</script>
+</body>
+</html>

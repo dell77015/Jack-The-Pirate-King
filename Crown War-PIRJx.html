@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Jack The Pirate King - Crown Wars V2</title>
+
+<style>
+body{
+background:#081522;
+color:gold;
+font-family:Courier New,monospace;
+max-width:1100px;
+margin:auto;
+padding:20px;
+}
+
+.panel{
+background:#102437;
+border:2px solid gold;
+padding:10px;
+margin-bottom:10px;
+}
+
+button{
+background:gold;
+padding:8px;
+margin:3px;
+font-weight:bold;
+cursor:pointer;
+}
+
+#log{
+height:250px;
+overflow-y:auto;
+background:#000;
+padding:10px;
+}
+
+.good{color:#00ff7f;}
+.bad{color:#ff6666;}
+.special{color:#66ccff;}
+
+h1{text-align:center;}
+</style>
+</head>
+<body>
+
+<h1>🏴‍☠️ JACK THE PIRATE KING 👑</h1>
+
+<div class="panel">
+Day: <span id="day"></span> |
+Gold: <span id="gold"></span> |
+HP: <span id="hp"></span> |
+Rep: <span id="rep"></span>
+</div>
+
+<div class="panel">
+Island:
+<select id="island">
+<option>Tortuga</option>
+<option>Skull Island</option>
+<option>Kraken Cove</option>
+<option>Ghost Isle</option>
+<option>Deadman's Reef</option>
+<option>Blackwater Port</option>
+<option>Crown Island</option>
+</select>
+
+<button onclick="travel()">⚓ Sail</button>
+
+<br><br>
+
+Ship:
+<span id="ship"></span>
+
+|
+Crew:
+<span id="crew"></span>
+
+|
+Fragments:
+<span id="frag"></span>/7
+</div>
+
+<div class="panel">
+<h3>Market</h3>
+
+Rum: <span id="rumP"></span>
+<button onclick="buy('rum')">Buy</button>
+<button onclick="sell('rum')">Sell</button>
+
+<br>
+
+Spice: <span id="spiceP"></span>
+<button onclick="buy('spice')">Buy</button>
+<button onclick="sell('spice')">Sell</button>
+
+<br>
+
+Maps: <span id="mapP"></span>
+<button onclick="buy('map')">Buy</button>
+<button onclick="sell('map')">Sell</button>
+
+</div>
+
+<div class="panel">
+
+<button onclick="treasure()">🗺 Treasure Hunt</button>
+
+<button onclick="battle()">⚔ Naval Battle</button>
+
+<button onclick="hireCrew()">👨‍✈️ Hire Crew</button>
+
+<button onclick="upgradeShip()">🚢 Upgrade Ship</button>
+
+<button onclick="kraken()">🐙 Kraken</button>
+
+<button onclick="ghostAdmiral()">👻 Ghost Admiral</button>
+
+<button onclick="saveGame()">💾 Save</button>
+
+<button onclick="loadGame()">📂 Load</button>
+
+</div>
+
+<div class="panel">
+<h3>Captain's Log</h3>
+<div id="log"></div>
+</div>
+
+<script>
+
+let day=1;
+let gold=500;
+let hp=100;
+let rep=0;
+let crew=0;
+let fragments=0;
+
+let ship="Sloop";
+
+const cargo={
+rum:0,
+spice:0,
+map:0
+};
+
+let prices={};
+
+function rnd(a,b){
+return Math.floor(Math.random()*(b-a)+a);
+}
+
+function log(msg,cls=""){
+let div=document.createElement("div");
+div.className=cls;
+div.innerHTML=msg;
+document.getElementById("log").prepend(div);
+}
+
+function market(){
+
+prices={
+rum:rnd(20,150),
+spice:rnd(80,600),
+map:rnd(500,2500)
+};
+
+update();
+}
+
+function update(){
+
+dayEl.textContent=day;
+goldEl.textContent=gold;
+hpEl.textContent=hp;
+repEl.textContent=rep;
+crewEl.textContent=crew;
+shipEl.textContent=ship;
+fragEl.textContent=fragments;
+
+rumP.textContent=prices.rum;
+spiceP.textContent=prices.spice;
+mapP.textContent=prices.map;
+
+}
+
+function buy(item){
+
+if(gold>=prices[item]){
+
+gold-=prices[item];
+cargo[item]++;
+
+log("Bought "+item,"good");
+
+}
+
+update();
+
+}
+
+function sell(item){
+
+if(cargo[item]>0){
+
+cargo[item]--;
+gold+=prices[item];
+
+log(
+"Sold "+item+
+" for "+prices[item],
+"good"
+);
+
+}
+
+update();
+
+}
+
+function travel(){
+
+day++;
+
+market();
+
+let roll=rnd(1,100);
+
+if(roll<20){
+
+let g=rnd(200,3000);
+
+gold+=g;
+
+log(
+"💰 Floating treasure found: "
++g,
+"good"
+);
+
+}
+
+else if(roll<40){
+
+battle();
+
+}
+
+else if(roll<50){
+
+if(fragments<7){
+
+fragments++;
+
+log(
+"👑 Crown Fragment Found ("+
+fragments+"/7)",
+"special"
+);
+
+}
+
+}
+
+}
+
+function battle(){
+
+let enemyHP=rnd(50,150);
+
+while(enemyHP>0 && hp>0){
+
+let dmg=rnd(15,30);
+
+enemyHP-=dmg;
+
+hp-=rnd(5,20);
+
+}
+
+if(hp<=0){
+
+alert("☠️ Your ship sank!");
+
+location.reload();
+
+}
+
+let reward=rnd(500,5000);
+
+gold+=reward;
+
+rep+=10;
+
+log(
+"⚔ Won battle +"+reward,
+"good"
+);
+
+update();
+
+}
+
+function treasure(){
+
+let roll=rnd(1,100);
+
+if(roll<60){
+
+let g=rnd(1000,8000);
+
+gold+=g;
+
+log(
+"🗺 Treasure found: "+g,
+"good"
+);
+
+}
+
+else{
+
+hp-=20;
+
+log(
+"☠️ Pirate ambush!",
+"bad"
+);
+
+}
+
+update();
+
+}
+
+function hireCrew(){
+
+if(gold>=500){
+
+gold-=500;
+
+crew++;
+
+log(
+"👨‍✈️ Crew hired",
+"good"
+);
+
+}
+
+update();
+
+}
+
+function upgradeShip(){
+
+if(ship==="Sloop"&&gold>=2500){
+
+ship="Brigantine";
+gold-=2500;
+
+}
+
+else if(
+ship==="Brigantine"&&gold>=10000
+){
+
+ship="Frigate";
+gold-=10000;
+
+}
+
+else if(
+ship==="Frigate"&&gold>=50000
+){
+
+ship="Black Crown";
+gold-=50000;
+
+log(
+"👑 Black Crown Acquired!",
+"special"
+);
+
+}
+
+update();
+
+}
+
+function kraken(){
+
+if(confirm("Fight Kraken?")){
+
+if(rnd(1,100)>50){
+
+gold+=25000;
+
+log(
+"🐙 Kraken Defeated!",
+"special"
+);
+
+}
+
+else{
+
+hp-=40;
+
+log(
+"🐙 Kraken Attack!",
+"bad"
+);
+
+}
+
+update();
+
+}
+
+}
+
+function ghostAdmiral(){
+
+if(fragments<4){
+
+log(
+"Need 4 Crown Fragments first.",
+"bad"
+);
+
+return;
+}
+
+if(confirm("Challenge Ghost Admiral?")){
+
+if(rnd(1,100)>40){
+
+gold+=50000;
+
+rep+=50;
+
+log(
+"👻 Ghost Admiral Defeated!",
+"special"
+);
+
+}
+
+else{
+
+hp-=50;
+
+log(
+"Ghost Admiral defeated your fleet.",
+"bad"
+);
+
+}
+
+update();
+
+}
+
+}
+
+function saveGame(){
+
+localStorage.setItem(
+"pirjxsave",
+
+JSON.stringify({
+
+day,gold,hp,rep,
+crew,fragments,
+ship,cargo
+
+})
+
+);
+
+log(
+"💾 Game Saved",
+"special"
+);
+
+}
+
+function loadGame(){
+
+let save=
+JSON.parse(
+localStorage.getItem(
+"pirjxsave"
+)
+);
+
+if(!save)return;
+
+day=save.day;
+gold=save.gold;
+hp=save.hp;
+rep=save.rep;
+crew=save.crew;
+fragments=save.fragments;
+ship=save.ship;
+
+Object.assign(
+cargo,
+save.cargo
+);
+
+update();
+
+log(
+"📂 Game Loaded",
+"special"
+);
+
+}
+
+setInterval(()=>{
+
+if(
+gold>=1000000 &&
+ship==="Black Crown" &&
+fragments>=7
+){
+
+alert(
+"👑 YOU ARE NOW\nJACK THE PIRATE KING!"
+);
+
+}
+
+},3000);
+
+const dayEl=document.getElementById("day");
+const goldEl=document.getElementById("gold");
+const hpEl=document.getElementById("hp");
+const repEl=document.getElementById("rep");
+const crewEl=document.getElementById("crew");
+const shipEl=document.getElementById("ship");
+const fragEl=document.getElementById("frag");
+
+market();
+
+log(
+"🏴‍☠️ Welcome Captain.",
+"special"
+);
+
+log(
+"Find 7 Crown Fragments.",
+"special"
+);
+
+log(
+"Acquire the Black Crown.",
+"special"
+);
+
+log(
+"Earn 1,000,000 gold.",
+"special"
+);
+
+</script>
+
+</body>
+</html>
